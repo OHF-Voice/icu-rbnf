@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-15-intel, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     outputs:
       tag: ${{ steps.read_ver.outputs.tag }}
       file_ver: ${{ steps.read_ver.outputs.file_ver }}
