@@ -1,7 +1,5 @@
 """Tests for icu_rbnf library."""
 
-import pytest
-
 import icu_rbnf
 
 
@@ -43,7 +41,9 @@ class TestSpellout:
     def test_large_numbers(self):
         """Test spellout with larger numbers."""
         assert icu_rbnf.spellout(1000, "en_US") == "one thousand"
-        assert icu_rbnf.spellout(1234, "en_US") == "one thousand two hundred thirty-four"
+        assert (
+            icu_rbnf.spellout(1234, "en_US") == "one thousand two hundred thirty-four"
+        )
         assert icu_rbnf.spellout(1000000, "en_US") == "one million"
 
     def test_example_from_spec(self):
@@ -105,7 +105,7 @@ class TestEdgeCases:
         """Test behavior with invalid locale."""
         # ICU may not raise an error for invalid locale, just use default
         # This test verifies the error exception is available
-        assert hasattr(icu_rbnf, 'error')
+        assert hasattr(icu_rbnf, "error")
 
     def test_very_large_number(self):
         """Test with a very large number."""
@@ -145,20 +145,46 @@ class TestSpelloutOrdinal:
         assert "1" in result and "er" in result
 
 
+class TestIsLocaleSupported:
+    """Tests for the is_locale_supported function."""
+
+    def test_valid_locales(self):
+        """Test that valid locales are supported."""
+        assert icu_rbnf.is_locale_supported("en_US") is True
+        assert icu_rbnf.is_locale_supported("fr_FR") is True
+        assert icu_rbnf.is_locale_supported("de_DE") is True
+        assert icu_rbnf.is_locale_supported("es_ES") is True
+        assert icu_rbnf.is_locale_supported("en_GB") is True
+
+    def test_invalid_locales(self):
+        """Test that empty strings are not supported."""
+        assert icu_rbnf.is_locale_supported("") is False
+
+    def test_special_characters(self):
+        """Test that locales with invalid characters are rejected."""
+        assert icu_rbnf.is_locale_supported("en@US") is False
+        assert icu_rbnf.is_locale_supported("en US") is False
+
+
 class TestModuleAPI:
     """Tests for module-level API."""
 
     def test_error_exception_exists(self):
         """Test that error exception is exposed at module level."""
-        assert hasattr(icu_rbnf, 'error')
+        assert hasattr(icu_rbnf, "error")
         assert isinstance(icu_rbnf.error, type)
 
     def test_version_exists(self):
         """Test that version is exposed."""
-        assert hasattr(icu_rbnf, '__version__')
+        assert hasattr(icu_rbnf, "__version__")
         assert icu_rbnf.__version__ == "0.1.0"
 
     def test_spellout_ordinal_exists(self):
         """Test that spellout_ordinal function is exposed."""
-        assert hasattr(icu_rbnf, 'spellout_ordinal')
+        assert hasattr(icu_rbnf, "spellout_ordinal")
         assert callable(icu_rbnf.spellout_ordinal)
+
+    def test_is_locale_supported_exists(self):
+        """Test that is_locale_supported function is exposed."""
+        assert hasattr(icu_rbnf, "is_locale_supported")
+        assert callable(icu_rbnf.is_locale_supported)

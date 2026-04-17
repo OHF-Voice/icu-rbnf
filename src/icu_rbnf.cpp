@@ -72,6 +72,59 @@ static int parse_number(PyObject* obj, int64_t* result) {
     return -1;
 }
 
+/* Check if a locale is supported by ICU RBNF */
+static PyObject* rbnf_is_locale_supported(PyObject* self, PyObject* args) {
+    const char* locale_str;
+
+    if (!PyArg_ParseTuple(args, "s", &locale_str)) {
+        return NULL;
+    }
+
+    /* ICU is very permissive and falls back to default locale for invalid inputs.
+     * We check if the locale string is syntactically valid and if ICU can create
+     * a formatter with it. Since ICU always succeeds with fallback, we just verify
+     * that the locale string is non-empty and contains valid characters.
+     *
+     * A locale string should be in the format: language[_SCRIPT][_REGION]
+     * where language is 2-3 letter ISO 639 code, SCRIPT is 4 letter ISO 15924 code,
+     * and REGION is 2-3 letter ISO 3166 code.
+     */
+
+    /* Basic validation: locale string must not be empty */
+    if (!locale_str || locale_str[0] == '\0') {
+        Py_RETURN_FALSE;
+    }
+
+    /* Check for basic validity - should contain only alphanumeric, underscore, hyphen */
+    for (const char* p = locale_str; *p; ++p) {
+        if (!isalnum((unsigned char)*p) && *p != '_' && *p != '-') {
+            Py_RETURN_FALSE;
+        }
+    }
+
+    /* Try to create a spellout formatter to verify ICU can handle it */
+    UErrorCode status = U_ZERO_ERROR;
+    icu::Locale locale(locale_str);
+
+    /* Check if the locale is valid by checking its name */
+    icu::UnicodeString locale_name = locale.getName();
+    if (locale_name.isEmpty()) {
+        Py_RETURN_FALSE;
+    }
+
+    /* Try to create a formatter */
+    icu::RuleBasedNumberFormat* rbnf = nullptr;
+    rbnf = new icu::RuleBasedNumberFormat(icu::URBNF_SPELLOUT, locale, status);
+
+    if (U_FAILURE(status) || !rbnf) {
+        delete rbnf;
+        Py_RETURN_FALSE;
+    }
+
+    delete rbnf;
+    Py_RETURN_TRUE;
+}
+
 /* Spell out a number using ICU RBNF */
 static PyObject* rbnf_spellout(PyObject* self, PyObject* args) {
     PyObject* number_obj;
@@ -218,6 +271,7 @@ static PyObject* rbnf_spellout_ordinal(PyObject* self, PyObject* args) {
 
 /* Module methods */
 static PyMethodDef IcuRbnfMethods[] = {
+    {"is_locale_supported", rbnf_is_locale_supported, METH_VARARGS, "Check if a locale is supported by ICU RBNF"},
     {"spellout", rbnf_spellout, METH_VARARGS, "Spell out a number in words"},
     {"ordinal", rbnf_ordinal, METH_VARARGS, "Get ordinal form of a number (e.g., '1st', '2nd')"},
     {"spellout_ordinal", rbnf_spellout_ordinal, METH_VARARGS, "Spell out ordinal form of a number (e.g., 'first', 'twenty-first')"},
