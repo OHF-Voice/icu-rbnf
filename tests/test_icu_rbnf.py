@@ -97,8 +97,10 @@ class TestEdgeCases:
         assert icu_rbnf.spellout(-42, "en_US") == "minus forty-two"
 
     def test_float_numbers(self):
-        """Test spellout with float numbers (truncated to int)."""
-        assert icu_rbnf.spellout(123.7, "en_US") == "one hundred twenty-three"
+        """Test spellout with float numbers (properly formatted)."""
+        assert (
+            icu_rbnf.spellout(123.7, "en_US") == "one hundred twenty-three point seven"
+        )
         assert icu_rbnf.spellout(42.0, "en_US") == "forty-two"
 
     def test_invalid_locale(self):

@@ -72,6 +72,23 @@ static int parse_number(PyObject* obj, int64_t* result) {
     return -1;
 }
 
+/* Helper to convert Python number to double */
+static int parse_number_double(PyObject* obj, double* result) {
+    /* Try to convert via float */
+    PyObject* float_obj = PyNumber_Float(obj);
+    if (float_obj) {
+        *result = PyFloat_AsDouble(float_obj);
+        Py_DECREF(float_obj);
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    PyErr_SetString(PyExc_TypeError, "argument must be a number");
+    return -1;
+}
+
 /* Check if a locale is supported by ICU RBNF */
 static PyObject* rbnf_is_locale_supported(PyObject* self, PyObject* args) {
     const char* locale_str;
@@ -125,7 +142,7 @@ static PyObject* rbnf_is_locale_supported(PyObject* self, PyObject* args) {
     Py_RETURN_TRUE;
 }
 
-/* Spell out a number using ICU RBNF */
+/* Spell out a number using ICU RBNF (supports both integers and floats) */
 static PyObject* rbnf_spellout(PyObject* self, PyObject* args) {
     PyObject* number_obj;
     const char* locale_str;
@@ -134,9 +151,9 @@ static PyObject* rbnf_spellout(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    /* Get the number as int64_t */
-    int64_t number;
-    if (parse_number(number_obj, &number) != 0) {
+    /* Get the number as double (supports both int and float) */
+    double number;
+    if (parse_number_double(number_obj, &number) != 0) {
         return NULL;
     }
 
@@ -156,7 +173,7 @@ static PyObject* rbnf_spellout(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    /* Format the number */
+    /* Format the number - ICU handles both integers and floats */
     icu::UnicodeString result;
     rbnf->format(number, result);
 
@@ -174,7 +191,7 @@ static PyObject* rbnf_ordinal(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    /* Get the number as int64_t */
+    /* Get the number as int64_t (truncate floats) */
     int64_t number;
     if (parse_number(number_obj, &number) != 0) {
         return NULL;
@@ -214,7 +231,7 @@ static PyObject* rbnf_spellout_ordinal(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    /* Get the number as int64_t */
+    /* Get the number as int64_t (truncate floats) */
     int64_t number;
     if (parse_number(number_obj, &number) != 0) {
         return NULL;
