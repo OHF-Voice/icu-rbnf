@@ -51,3 +51,4 @@ compile_commands.json
 *.whl
 
 .qwen/
+.python-version

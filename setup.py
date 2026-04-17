@@ -76,12 +76,12 @@ setup(
     description="Spell out numbers into words using ICU RBNF",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="Hansen, Matthew",
-    author_email="matt@example.com",
-    url="https://github.com/example/icu_rbnf",
+    author="The Home Assistant Authors",
+    author_email="hello@home-assistant.io",
+    url="https://github.com/OHF-voice/icu-rbnf",
     project_urls={
-        "Homepage": "https://github.com/example/icu_rbnf",
-        "Issues": "https://github.com/example/icu_rbnf/issues",
+        "Homepage": "https://github.com/OHF-voice/icu-rbnf",
+        "Issues": "https://github.com/OHF-voice/icu-rbnf/issues",
     },
     packages=["icu_rbnf"],
     package_dir={"icu_rbnf": "icu_rbnf"},
@@ -92,7 +92,7 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
@@ -102,4 +102,14 @@ setup(
         "Programming Language :: Python :: 3.13",
         "Programming Language :: C",
     ],
+    extras_require={
+        "dev": [
+            "black",
+            "flake8",
+            "mypy",
+            "pylint",
+            "pytest",
+            "build",
+        ],
+    },
 )
