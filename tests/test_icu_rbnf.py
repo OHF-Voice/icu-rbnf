@@ -179,7 +179,11 @@ class TestModuleAPI:
     def test_version_exists(self):
         """Test that version is exposed."""
         assert hasattr(icu_rbnf, "__version__")
-        assert icu_rbnf.__version__ == "0.1.0"
+        # Shape, not a literal: pinning the value here means every release
+        # bump fails a test that is not about the release.
+        parts = icu_rbnf.__version__.split(".")
+        assert len(parts) >= 2
+        assert all(p.isdigit() for p in parts[:2])
 
     def test_spellout_ordinal_exists(self):
         """Test that spellout_ordinal function is exposed."""
@@ -190,3 +194,55 @@ class TestModuleAPI:
         """Test that is_locale_supported function is exposed."""
         assert hasattr(icu_rbnf, "is_locale_supported")
         assert callable(icu_rbnf.is_locale_supported)
+
+
+class TestIcuVersion:
+    """The ICU version is the CLDR version, so it is worth asserting."""
+
+    def test_reports_a_version(self):
+        """icu_version() returns something like '78.3'."""
+        version = icu_rbnf.icu_version()
+        assert version
+        assert version[0].isdigit()
+
+    def test_is_recent_enough(self):
+        """Guard against a build picking up an ancient system ICU.
+
+        ICU 60 -- AlmaLinux 8's, and what these wheels shipped before
+        script/build-icu existed -- carries CLDR 32 from 2017. It has no rules
+        at all for several locales and silently falls back to English for them,
+        which is indistinguishable from working. ICU 77 is also the first
+        release whose RBNF parser understands CLDR's `[a >>|b]` syntax.
+        """
+        major = int(icu_rbnf.icu_version().split(".", maxsplit=1)[0])
+        assert major >= 77, f"ICU {major} is too old; see script/build-icu"
+
+
+class TestLocalesMissingFromOldIcu:
+    """Locales that ICU 60 did not have, and silently spelled in English.
+
+    Each of these returned the English word before the ICU upgrade, so they
+    double as a check that the build did not quietly regress to a system ICU.
+    """
+
+    def test_swahili(self):
+        assert icu_rbnf.spellout(1, "sw") == "moja"
+        assert icu_rbnf.spellout(2, "sw") == "mbili"
+
+    def test_luxembourgish(self):
+        assert icu_rbnf.spellout(0, "lb") == "null"
+        assert icu_rbnf.spellout(1, "lb") == "eent"
+
+    def test_kazakh(self):
+        assert icu_rbnf.spellout(0, "kk") == "нөл"
+        assert icu_rbnf.spellout(1, "kk") == "бір"
+
+    def test_nepali(self):
+        assert icu_rbnf.spellout(1, "ne") == "एक"
+
+    def test_sundanese(self):
+        assert icu_rbnf.spellout(0, "su") == "nol"
+        assert icu_rbnf.spellout(1, "su") == "hiji"
+
+    def test_quechua(self):
+        assert icu_rbnf.spellout(1, "qu") == "huk"

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Build and install a pinned ICU from source.
+#
+# The spellout rules this package exposes *are* ICU's data, so the ICU version
+# is effectively the CLDR version. Taking whatever the build image happens to
+# carry is therefore a data decision made by accident: manylinux_2_28 is
+# AlmaLinux 8, whose `libicu-devel` is ICU 60 (CLDR 32, 2017). Wheels built that
+# way spell numbers in English for locales ICU has since gained -- sw, lb, ne,
+# kk, su, qu, ff and ccp among them -- because a missing locale silently falls
+# back to root rather than failing.
+#
+# ICU 77 is also the first release whose RBNF parser understands CLDR's
+# `[a >>|b]` alternate-form syntax, which CLDR 49 uses heavily.
+#
+# Override the version with ICU_VERSION, the install location with ICU_PREFIX.
+
+set -euo pipefail
+
+ICU_VERSION="${ICU_VERSION:-78.3}"
+ICU_PREFIX="${ICU_PREFIX:-/usr/local}"
+
+# 78.3 -> 78_3, which is how the release asset is named.
+ICU_UNDERSCORE="${ICU_VERSION//./_}"
+URL="https://github.com/unicode-org/icu/releases/download/release-${ICU_VERSION}/icu4c-${ICU_VERSION}-sources.tgz"
+
+workdir="$(mktemp -d)"
+trap 'rm -rf "$workdir"' EXIT
+
+echo "Building ICU ${ICU_VERSION} -> ${ICU_PREFIX}"
+curl -fsSL --retry 3 "$URL" -o "$workdir/icu.tgz"
+tar xzf "$workdir/icu.tgz" -C "$workdir"
+
+cd "$workdir/icu/source"
+./configure \
+    --prefix="$ICU_PREFIX" \
+    --disable-tests \
+    --disable-samples \
+    --disable-extras \
+    --enable-static \
+    --enable-shared
+make -j"$(nproc)"
+make install
+
+# So the freshly installed libraries are the ones found at link time and by
+# auditwheel, rather than any older ICU already present in the image.
+if command -v ldconfig >/dev/null 2>&1; then
+    ldconfig "$ICU_PREFIX/lib" || true
+fi
+
+PKG_CONFIG_PATH="$ICU_PREFIX/lib/pkgconfig" pkg-config --modversion icu-i18n
+echo "ICU ${ICU_VERSION} installed"

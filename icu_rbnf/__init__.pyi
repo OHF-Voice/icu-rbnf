@@ -17,6 +17,10 @@ def spellout_ordinal(number: Union[int, float], locale: str) -> str:
     """Spell out ordinal form of a number for the given locale (e.g., 'first', 'twenty-first')."""
     ...
 
+def icu_version() -> str:
+    """Version of the ICU library this extension is linked against."""
+    ...
+
 def is_locale_supported(locale: str) -> bool:
     """Check if a locale is supported by ICU RBNF."""
     ...
