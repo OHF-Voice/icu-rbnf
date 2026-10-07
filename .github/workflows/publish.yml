@@ -126,7 +126,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-15-intel, macos-latest]
+        # Only the platforms we actually build wheels for. The build
+        # matrix above is Linux-only, so there is no macOS or Windows
+        # wheel for this job to install.
+        os: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -146,7 +149,11 @@ jobs:
       - name: Install wheel
         run: |
           python -m pip install pytest
-          python -m pip install --find-links dist/ "icu-rbnf==${{ needs.version.outputs.file_ver }}"
+          # --only-binary: without it pip falls back to the sdist and builds
+          # against whatever ICU the runner has, so a missing wheel would pass
+          # this job while publishing nothing testable.
+          python -m pip install --only-binary=:all: --find-links dist/ \
+            "icu-rbnf==${{ needs.version.outputs.file_ver }}"
 
       - name: Test wheel
         run: |
