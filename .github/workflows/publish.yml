@@ -82,8 +82,13 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: >-
             PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
             LD_LIBRARY_PATH=/usr/local/lib
+          # Copy the tests out of the project directory before running them.
+          # Pointing pytest at {project}/tests puts the source tree on the
+          # path, and its icu_rbnf/ package shadows the installed wheel --
+          # which has the compiled _icu the source tree does not.
+          CIBW_TEST_SOURCES: tests
           CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: python -m pytest -vv {project}/tests
+          CIBW_TEST_COMMAND: python -m pytest -vv tests
           CIBW_BEFORE_ALL_LINUX: "bash {project}/script/build-icu"
 
           # Don't build PyPy and MUSL wheels for now
