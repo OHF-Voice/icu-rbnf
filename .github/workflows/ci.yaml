@@ -28,6 +28,28 @@ jobs:
         with:
           python-version: "${{ matrix.python_version }}"
           cache: "pip"
+
+      # Build against the same pinned ICU the wheels use. The runner's own
+      # libicu is older than the floor the tests assert, and testing against a
+      # different ICU than we ship is how the ICU 60 wheels went unnoticed.
+      - name: Cache ICU
+        id: icu
+        uses: actions/cache@v4
+        with:
+          path: ~/icu
+          # Keyed on the build script so bumping the pinned version
+          # invalidates the cache on its own.
+          key: icu-${{ hashFiles('script/build-icu') }}-${{ runner.arch }}
+
+      - name: Build ICU
+        if: steps.icu.outputs.cache-hit != 'true'
+        run: ICU_PREFIX="$HOME/icu" bash script/build-icu
+
+      - name: Use ICU
+        run: |
+          echo "PKG_CONFIG_PATH=$HOME/icu/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$HOME/icu/lib" >> "$GITHUB_ENV"
+
       - run: script/setup --dev
       - run: script/lint
       - run: script/test
