@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <unicode/utypes.h>
+#include <unicode/uversion.h>
 #include <unicode/rbnf.h>
 #include <unicode/locid.h>
 #include <unicode/unistr.h>
@@ -286,10 +287,30 @@ static PyObject* rbnf_spellout_ordinal(PyObject* self, PyObject* args) {
     return unicode_string_to_pystring(&result);
 }
 
+/* Version of the ICU the extension was built and linked against.
+
+   Worth exposing rather than leaving implicit: the spellout rules are ICU's
+   data, so the ICU version *is* the CLDR version, and a wheel built on an old
+   base image silently ships decade-old number rules. Making it readable lets a
+   test assert a floor. */
+static PyObject* rbnf_icu_version(PyObject* self, PyObject* args) {
+    (void)self;
+    if (!PyArg_ParseTuple(args, "")) {
+        return NULL;
+    }
+
+    UVersionInfo version;
+    char buffer[U_MAX_VERSION_STRING_LENGTH];
+    u_getVersion(version);
+    u_versionToString(version, buffer);
+    return PyUnicode_FromString(buffer);
+}
+
 /* Module methods */
 static PyMethodDef IcuRbnfMethods[] = {
     {"is_locale_supported", rbnf_is_locale_supported, METH_VARARGS, "Check if a locale is supported by ICU RBNF"},
     {"spellout", rbnf_spellout, METH_VARARGS, "Spell out a number in words"},
+    {"icu_version", rbnf_icu_version, METH_VARARGS, "ICU library version this extension is linked against"},
     {"ordinal", rbnf_ordinal, METH_VARARGS, "Get ordinal form of a number (e.g., '1st', '2nd')"},
     {"spellout_ordinal", rbnf_spellout_ordinal, METH_VARARGS, "Spell out ordinal form of a number (e.g., 'first', 'twenty-first')"},
     {NULL, NULL, 0, NULL}

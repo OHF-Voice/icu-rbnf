@@ -72,7 +72,7 @@ if readme_path.exists():
 
 setup(
     name="icu_rbnf",
-    version="0.1.0",
+    version="0.2.0",
     description="Spell out numbers into words using ICU RBNF",
     long_description=long_description,
     long_description_content_type="text/markdown",
